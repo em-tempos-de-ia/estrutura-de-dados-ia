@@ -1,0 +1,10 @@
+# Dependências dos benchmarks e laboratórios do livro
+# "Estruturas de Dados em Tempos de IA: De Programador a Auditor"
+#
+# A maioria dos scripts usa apenas a biblioteca padrão do Python (3.10+).
+# As dependências abaixo cobrem os capítulos que precisam de bibliotecas externas.
+
+memory-profiler>=0.61.0   # Capítulo 11 — profiling de memória linha a linha
+matplotlib>=3.8.0         # geração dos gráficos de crescimento em alguns benchmarks
+hnswlib>=0.8.0            # Capítulo 10 — índice HNSW real para busca vetorial aproximada
+pytest>=8.0.0             # suíte de testes unitários (tests/test_exercicios_unitarios.py)
