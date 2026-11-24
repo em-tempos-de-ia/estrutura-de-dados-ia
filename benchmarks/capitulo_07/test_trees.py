@@ -13,6 +13,13 @@ completa publicada no corpo do capítulo (só eram citadas na seção "No
 Repositório"); a implementação da AVL abaixo é uma AVL padrão (rotações
 simples e duplas, Fator de Balanceamento) escrita para este repositório.
 
+Os tempos publicados na Tabela 7.3 do livro foram medidos ANTES de a AVL
+receber a política explícita de duplicatas. A correção acrescenta uma
+comparação por nó na descida das inserções, o que pode deslocar os tempos de
+construção; alturas, contagens de visitas e rotações não mudam, porque as
+10.000 chaves do experimento são distintas. Ao republicar os tempos, meça
+novamente com esta versão.
+
 Uso:
     python test_trees.py
 """
@@ -35,12 +42,13 @@ class No:
 
 
 # --- BST ingênua (sem balanceamento) --------------------------------------
-# A inserção é a da Listagem 7.1. A busca usada na medição é a iterativa da
-# Listagem 7.2, para isolar o efeito da altura: as duas estruturas percorrem
-# um caminho da raiz até o nó procurado com o mesmo mecanismo, e a única
-# diferença é o comprimento desse caminho. A versão recursiva da Listagem
-# 7.1 está em buscar_recursivo, para reproduzir o RecursionError discutido
-# na seção 7.5.
+# A inserção é a da Listagem 7.1, preservada com seus defeitos para que o
+# leitor reproduza a auditoria da seção 7.5 — inclusive a ausência de
+# política para chaves duplicadas. A busca usada na medição é a iterativa da
+# Listagem 7.2: usar o mesmo algoritmo nas duas estruturas reduz a influência
+# de diferenças de implementação e permite destacar o efeito do comprimento
+# dos caminhos percorridos. A versão recursiva da Listagem 7.1 está em
+# buscar_recursivo, para reproduzir o RecursionError discutido na seção 7.5.
 class ArvoreBinariaIngenua:
     def __init__(self):
         self.raiz = None
@@ -64,7 +72,11 @@ class ArvoreBinariaIngenua:
                 self._inserir_recursivo(no_atual.direito, chave)
 
     def buscar(self, chave):
-        """Busca iterativa (Listagem 7.2). Espaço auxiliar O(1) na pilha."""
+        """Busca iterativa, adaptada da Listagem 7.2. Espaço auxiliar O(1)
+        na pilha. A Listagem 7.2 devolve o nó encontrado ou None; aqui o
+        retorno é booleano, porque o benchmark só precisa saber se a chave
+        existe. O caminho percorrido é o mesmo, e é ele que a medição compara.
+        """
         atual = self.raiz
         while atual is not None:
             if chave == atual.chave:
@@ -135,8 +147,10 @@ class ArvoreAVL:
             return NoAVL(chave)
         if chave < no.chave:
             no.esquerdo = self._inserir(no.esquerdo, chave)
-        else:
+        elif chave > no.chave:
             no.direito = self._inserir(no.direito, chave)
+        else:
+            return no          # política explícita: ignora chaves duplicadas
 
         self._atualizar_altura(no)
         fb = self._fator_balanceamento(no)
@@ -159,6 +173,8 @@ class ArvoreAVL:
         return no
 
     def buscar(self, chave):
+        """Mesma busca iterativa usada na BST, com o mesmo contrato booleano,
+        para que a comparação de tempos não misture diferenças de algoritmo."""
         atual = self.raiz
         while atual is not None:
             if chave == atual.chave:
@@ -256,8 +272,11 @@ def executar_benchmark():
     print(f"Altura Arvore AVL:  {alt_avl} (balanceada, O(log n))")
     print(f"Insercao das 10.000 chaves  BST: {med(ins_bst):.3f} s | "
           f"AVL: {med(ins_avl):.3f} s ({razao_ins:.0f}x)")
+    # tres casas na AVL: com duas, a razao publicada deixa de fechar com os
+    # valores da tabela, e um numero que o leitor nao consegue conferir e
+    # exatamente o que a secao 7.5 ensina a desconfiar.
     print(f"Busca, media de {n_buscas}      BST: {med(bus_bst) * 1e6:.1f} us | "
-          f"AVL: {med(bus_avl) * 1e6:.2f} us ({razao_bus:.0f}x)")
+          f"AVL: {med(bus_avl) * 1e6:.3f} us ({razao_bus:.0f}x)")
 
 
 def demonstrar_recursion_error():
